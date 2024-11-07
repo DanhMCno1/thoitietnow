@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\View\Components\UserLayout;
 use Illuminate\Support\Facades\Blade;
+use App\Models\State;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        view()->share('states', State::all());
         Blade::component('user-layout', UserLayout::class);
     }
 }
