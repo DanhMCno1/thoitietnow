@@ -68,6 +68,10 @@
                         <span id="open_humidity">--</span>%
                     </div>
                     <div class="weather-detail">
+                        <div>Visibility</div>
+                        <span id="open_visibility">--</span> km
+                    </div>
+                    <div class="weather-detail">
                         <div>Wind</div>
                         <span id="open_wind_kph">--</span> km/h
                     </div>
@@ -84,15 +88,29 @@
     </main>
 
     <!-- Chart Containers -->
-    <div class="px-48 mx-auto">
-        <div class="chart-container h-96">
-            <canvas id="rain-chance-chart"></canvas>
+    <div class="grid grid-cols-2 mx-auto px-48">
+        <div>
+            <div class="chart-container h-96">
+                <canvas id="rain-chance-chart"></canvas>
+            </div>
+            <div class="chart-container h-96">
+                <canvas id="rainfall-chart"></canvas>
+            </div>
+            <div class="chart-container h-96">
+                <canvas id="weekly-rain-chance-chart"></canvas>
+            </div>
         </div>
-        <div class="chart-container h-96">
-            <canvas id="rainfall-chart"></canvas>
-        </div>
-        <div class="chart-container h-96">
-            <canvas id="weekly-rain-chance-chart"></canvas>
+
+        <div>
+            <div class="chart-container h-96">
+                <canvas id="rain-chance-chart-openweathermap"></canvas>
+            </div>
+            <div class="chart-container h-96">
+                <canvas id="rainfall-chart-openweathermap"></canvas>
+            </div>
+            <div class="chart-container h-96">
+                <canvas id="weekly-rain-chance-chart-openweathermap"></canvas>
+            </div>
         </div>
     </div>
 
@@ -210,7 +228,7 @@
 
                 async function fetchOpenWeather(city = "Hanoi") {
                     const openWeatherApiKey = '8a20dec3a0d89b95d3626c4b77da1834';
-                    const openWeatherApiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${openWeatherApiKey}&units=metric`;
+                    const openWeatherApiUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${openWeatherApiKey}&units=metric`;
 
                     try {
                         const response = await fetch(openWeatherApiUrl);
@@ -223,36 +241,73 @@
                             return (celsius * 9/5) + 32;
                         }
 
-                        // Update HTML with OpenWeatherMap data
-                        document.getElementById('open_temp_c').textContent = convertCtoF(data.main.temp).toFixed(1);
-                        document.getElementById('open_feelslike_c').textContent = convertCtoF(data.main.feels_like).toFixed(1);
-                        document.getElementById('open_condition').textContent = data.weather[0].description;
-                        document.getElementById('open_humidity').textContent = data.main.humidity;
-                        document.getElementById('open_wind_kph').textContent = (data.wind.speed * 3.6).toFixed(1); // Convert m/s to km/h
-                        document.getElementById('open_min_temp').textContent = convertCtoF(data.main.temp_min).toFixed(1);
-                        document.getElementById('open_max_temp').textContent = convertCtoF(data.main.temp_max).toFixed(1);
+                        // Get current weather data (first forecast entry)
+                        const currentWeather = data.list[0];
+                        document.getElementById('open_temp_c').textContent = convertCtoF(currentWeather.main.temp).toFixed(1);
+                        document.getElementById('open_feelslike_c').textContent = convertCtoF(currentWeather.main.feels_like).toFixed(1);
+                        document.getElementById('open_condition').textContent = currentWeather.weather[0].description;
+                        document.getElementById('open_humidity').textContent = currentWeather.main.humidity;
+                        document.getElementById('open_wind_kph').textContent = (currentWeather.wind.speed * 3.6).toFixed(1); // Convert m/s to km/h
+                        document.getElementById('open_min_temp').textContent = convertCtoF(currentWeather.main.temp_min).toFixed(1);
+                        document.getElementById('open_max_temp').textContent = convertCtoF(currentWeather.main.temp_max).toFixed(1);
+                        document.getElementById('open_visibility').textContent = (currentWeather.visibility / 1000).toFixed(1); // Convert visibility to km
 
-                        // Get sunrise and sunset times in milliseconds
-                        const sunrise = new Date(data.sys.sunrise * 1000);
-                        const sunset = new Date(data.sys.sunset * 1000);
+                        // Calculate and format sunrise/sunset using timezone
+                        const timezoneOffsetSeconds = data.city.timezone; // Offset in seconds
+                        const timezoneOffsetString = `UTC${timezoneOffsetSeconds >= 0 ? '+' : ''}${timezoneOffsetSeconds / 3600}`;
 
-                        // Format time using the local time zone offset
-                        document.getElementById('open_sunrise').textContent = sunrise.toLocaleTimeString('en-US', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true,
-                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                        });
-                        document.getElementById('open_sunset').textContent = sunset.toLocaleTimeString('en-US', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true,
-                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                        });
+                        const sunrise = luxon.DateTime.fromSeconds(data.city.sunrise, { zone: timezoneOffsetString });
+                        const sunset = luxon.DateTime.fromSeconds(data.city.sunset, { zone: timezoneOffsetString });
 
-                        // Set OpenWeatherMap icon
-                        let iconCode = data.weather[0].icon;
+                        document.getElementById('open_sunrise').textContent = sunrise.toFormat('hh:mm a');
+                        document.getElementById('open_sunset').textContent = sunset.toFormat('hh:mm a');
+
+                        // Set the OpenWeatherMap icon
+                        const iconCode = currentWeather.weather[0].icon;
                         document.getElementById('openweather-icon').src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+
+                        // Prepare hourly rain chance and rainfall data for charts
+                        const hourlyLabels = data.list.map(entry => {
+                            const date = new Date(entry.dt * 1000);
+                            return date.getHours() + ':00';
+                        });
+
+                        const rainChanceData = data.list.map(entry => entry.pop * 100); // Probability of precipitation in %
+                        const rainfallData = data.list.map(entry => (entry.rain ? entry.rain['3h'] || 0 : 0)); // Rain volume in mm
+
+                        // Create bar charts for rain chance and rainfall
+                        createBarChart('rain-chance-chart-openweathermap', hourlyLabels, 'Chance of rain (%)', rainChanceData, 'rgba(75, 192, 192, 0.6)');
+                        createBarChart('rainfall-chart-openweathermap', hourlyLabels, 'Rainfall (mm)', rainfallData, 'rgba(153, 102, 255, 0.6)');
+
+                        // Prepare data for the line chart (7-day forecast)
+                        const dailyTempData = data.list.filter((_, index) => index % 8 === 0).slice(0, 7).map(entry => convertCtoF(entry.main.temp).toFixed(1));
+                        const dailyRainChance = data.list.filter((_, index) => index % 8 === 0).slice(0, 7).map(entry => entry.pop * 100);
+                        const dailyLabels = data.list.filter((_, index) => index % 8 === 0).slice(0, 7).map(entry => {
+                            const date = new Date(entry.dt * 1000);
+                            return date.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' });
+                        });
+
+                        // Create a line chart for temperature and rain chance
+                        createLineChart('weekly-rain-chance-chart-openweathermap', dailyLabels, [
+                            {
+                                label: 'Temperature (°F)',
+                                data: dailyTempData,
+                                borderColor: 'rgba(255, 99, 132, 0.6)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                type: 'line',
+                                fill: false,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Chance of rain (%)',
+                                data: dailyRainChance,
+                                borderColor: 'rgba(54, 162, 235, 0.6)',
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                type: 'line',
+                                fill: false,
+                                tension: 0.1
+                            }
+                        ]);
 
                     } catch (error) {
                         console.error("Error fetching OpenWeatherMap data:", error);
@@ -260,7 +315,12 @@
                     }
                 }
 
+                // Chức năng tạo biểu đồ cột
                 function createBarChart(chartId, labels, label, data, backgroundColor) {
+                    // Lọc các phần tử chỉ giữ lại các mốc 3 tiếng một lần
+                    const filteredLabels = labels.filter((_, index) => index % 3 === 0);
+                    const filteredData = data.filter((_, index) => index % 3 === 0);
+
                     if (charts[chartId]) {
                         charts[chartId].destroy();
                     }
@@ -269,10 +329,10 @@
                     charts[chartId] = new Chart(ctx, {
                         type: 'bar',
                         data: {
-                            labels: labels,
+                            labels: filteredLabels,
                             datasets: [{
                                 label: label,
-                                data: data,
+                                data: filteredData,
                                 backgroundColor: backgroundColor
                             }]
                         },
@@ -298,6 +358,7 @@
                     });
                 }
 
+                // Tạo biểu đồ line
                 function createLineChart(chartId, labels, datasets) {
                     if (charts[chartId]) {
                         charts[chartId].destroy();
@@ -353,7 +414,7 @@
                     }
                 });
 
-                fetchWeather(); // Initial call for default data
+                fetchWeather();
             });
         </script>
     </x-slot>

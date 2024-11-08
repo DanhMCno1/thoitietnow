@@ -8,6 +8,7 @@
     <link rel="icon" href="{{ asset('logo-thoitietnow.ico') }}" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@2.3.2/build/global/luxon.min.js"></script>
 
 </head>
 <body class="bg-gray-100">
