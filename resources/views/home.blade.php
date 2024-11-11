@@ -3,25 +3,25 @@
         Weather forecast comparison
     </x-slot>
     <!-- Main Content -->
-    <main class="container mx-auto py-8 flex">
-        <div class="w-1/2 bg-white rounded shadow p-4 text-center">
+    <main class="container mx-auto py-8 flex flex-wrap">
+        <div class="w-full md:w-1/2 bg-white rounded shadow p-4 text-center mb-8 md:mb-0">
             <div class="weather-info">
-                <h2>Weather Forecast Comparison: <span id="city-name">--</span></h2>
+                <h2 class="text-lg md:text-xl lg:text-lg">Weather Forecast Comparison: <span id="city-name">--</span></h2>
 
                 <!-- WeatherAPI Data -->
-                <div class="font-bold text-2xl mt-4">WeatherAPI Data</div>
-                <div class="font-bold text-5xl text-blue-500">
-                    <img id="weather-icon" src="images/weather-icons/sunning.png" alt="Weather Icon" class="w-20 inline-block">
+                <div class="font-bold text-xl md:text-2xl mt-4">WeatherAPI Data</div>
+                <div class="font-bold text-3xl md:text-4xl lg:text-5xl text-blue-500">
+                    <img id="weather-icon" src="images/weather-icons/sunning.png" alt="Weather Icon" class="w-16 md:w-20 inline-block">
                     <span id="temp_c">--</span>°F
                 </div>
-                <div class="text-gray-500 font-semibold">
+                <div class="text-gray-500 font-semibold text-sm md:text-base">
                     <span id="condition">--</span>
                 </div>
-                <div class="feels-like">
+                <div class="feels-like text-sm md:text-base">
                     Feel like <span id="feelslike_c">--</span>°F
                 </div>
 
-                <div class="flex mt-6 text-gray-600 justify-around">
+                <div class="flex flex-wrap mt-6 text-gray-600 justify-around text-sm md:text-base">
                     <!-- Weather details -->
                     <div class="weather-detail">
                         <div>Low/High</div>
@@ -32,7 +32,7 @@
                         <span id="humidity">--</span>%
                     </div>
                     <div class="weather-detail">
-                        <div>Vision</div>
+                        <div>Visibility</div>
                         <span id="vis_km">--</span> km
                     </div>
                     <div class="weather-detail">
@@ -46,19 +46,19 @@
                 </div>
 
                 <!-- OpenWeatherMap Data -->
-                <div class="font-bold text-2xl mt-8">OpenWeatherMap Data</div>
-                <div class="font-bold text-5xl text-green-500">
-                    <img id="openweather-icon" src="images/weather-icons/default.png" alt="Weather Icon" class="w-20 inline-block">
+                <div class="font-bold text-xl md:text-2xl mt-8">OpenWeatherMap Data</div>
+                <div class="font-bold text-3xl md:text-4xl lg:text-5xl text-green-500">
+                    <img id="openweather-icon" src="" alt="Weather Icon" class="w-16 md:w-20 inline-block">
                     <span id="open_temp_c">--</span>°F
                 </div>
-                <div class="text-gray-500 font-semibold">
+                <div class="text-gray-500 font-semibold text-sm md:text-base">
                     <span id="open_condition">--</span>
                 </div>
-                <div class="feels-like">
+                <div class="feels-like text-sm md:text-base">
                     Feel like <span id="open_feelslike_c">--</span>°F
                 </div>
 
-                <div class="flex mt-6 text-gray-600 justify-around">
+                <div class="flex flex-wrap mt-6 text-gray-600 justify-around text-sm md:text-base">
                     <div class="weather-detail">
                         <div>Low/High</div>
                         <span id="open_min_temp">--</span>°/<span id="open_max_temp">--</span>°
@@ -82,33 +82,35 @@
                 </div>
             </div>
         </div>
-        <div id="forecast-container" class="w-1/2 flex justify-evenly mt-4">
+        <div id="forecast-container" class="w-full md:w-1/2 flex flex-wrap justify-evenly mt-4">
             <!-- WeatherAPI forecast data -->
         </div>
     </main>
 
     <!-- Chart Containers -->
-    <div class="grid grid-cols-2 mx-auto px-48">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mx-auto px-4 sm:px-8 lg:px-20 xl:px-48 2xl:px-64">
         <div>
-            <div class="chart-container h-96">
+            <h2 class="text-center font-bold text-lg md:text-xl">Charts from WeatherAPI Data</h2>
+            <div class="chart-container h-72 md:h-96">
                 <canvas id="rain-chance-chart"></canvas>
             </div>
-            <div class="chart-container h-96">
+            <div class="chart-container h-72 md:h-96">
                 <canvas id="rainfall-chart"></canvas>
             </div>
-            <div class="chart-container h-96">
+            <div class="chart-container h-72 md:h-96">
                 <canvas id="weekly-rain-chance-chart"></canvas>
             </div>
         </div>
 
         <div>
-            <div class="chart-container h-96">
+            <h2 class="text-center font-bold text-lg md:text-xl">Charts from OpenWeatherMap Data</h2>
+            <div class="chart-container h-72 md:h-96">
                 <canvas id="rain-chance-chart-openweathermap"></canvas>
             </div>
-            <div class="chart-container h-96">
+            <div class="chart-container h-72 md:h-96">
                 <canvas id="rainfall-chart-openweathermap"></canvas>
             </div>
-            <div class="chart-container h-96">
+            <div class="chart-container h-72 md:h-96">
                 <canvas id="weekly-rain-chance-chart-openweathermap"></canvas>
             </div>
         </div>
@@ -119,8 +121,10 @@
             document.addEventListener('DOMContentLoaded', () => {
                 let charts = {}; // Store all charts
 
-                async function fetchWeather(city = "Hanoi") {
-                    const weatherApiKey = '2c5b2e5a1240412db9a102920240411';
+                const weatherApiKey = @json(env('WEATHER_API_KEY'));
+                const openWeatherApiKey = @json(env('OPENWEATHER_API_KEY'));
+
+                async function fetchWeather(city = "New York") {
                     const weatherApiUrl = `https://api.weatherapi.com/v1/forecast.json?key=${weatherApiKey}&q=${city}&days=7&aqi=no&alerts=no`;
 
                     try {
@@ -149,7 +153,7 @@
 
                         // Set WeatherAPI icon
                         const condition = data.current.condition.text.toLowerCase();
-                        let iconPath = 'images/weather-icons/default.png'; // Hình ảnh mặc định
+                        let iconPath = 'images/weather-icons/cluster-clouds.png'; // Hình ảnh mặc định
                         if (condition.includes('sunny') || condition.includes('clear')) {
                             iconPath = 'images/weather-icons/sunning.png';
                         } else if (condition.includes('partly cloudy')) {
@@ -158,7 +162,7 @@
                             iconPath = 'images/weather-icons/cluster-clouds.png';
                         } else if (condition.includes('fog') || condition.includes('mist')) {
                             iconPath = 'images/weather-icons/fog.png';
-                        } else if (condition.includes('rain') || condition.includes('showers')) {
+                        } else if (condition.includes('rain') || condition.includes('showers') || condition.includes('Light drizzle')) {
                             iconPath = 'images/weather-icons/rain.png';
                         } else if (condition.includes('thunder') || condition.includes('storm')) {
                             iconPath = 'images/weather-icons/storm.png';
@@ -195,10 +199,19 @@
                         const rainfallData = data.forecast.forecastday[0].hour.map(hour => hour.precip_mm);
                         createBarChart('rainfall-chart', hourlyLabels, 'Rainfall (mm)', rainfallData, 'rgba(75, 192, 192, 0.6)');
 
-                        // Line chart for daily temperature and rain chance
-                        const weeklyRainChance = data.forecast.forecastday.map(day => day.day.daily_chance_of_rain);
-                        const weeklyTemp = data.forecast.forecastday.map(day => convertCtoF(day.day.avgtemp_c).toFixed(1));
-                        const weeklyLabels = data.forecast.forecastday.map(day => new Date(day.date).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' }));
+                        // Lấy ngày hiện tại tính từ 0h00
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0); // Đặt thời gian là 0h00 của ngày hiện tại
+
+                        // Lọc dữ liệu để chỉ lấy từ ngày hiện tại trở đi
+                        const filteredForecast = data.forecast.forecastday.filter(day => new Date(day.date) >= today);
+
+                        // Tạo dữ liệu cho các biểu đồ từ dữ liệu đã lọc
+                        const weeklyLabels = filteredForecast.map(day => new Date(day.date).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' }));
+                        const weeklyTemp = filteredForecast.map(day => convertCtoF(day.day.avgtemp_c).toFixed(1));
+                        const weeklyRainChance = filteredForecast.map(day => day.day.daily_chance_of_rain);
+
+                        // Tạo biểu đồ đường
                         createLineChart('weekly-rain-chance-chart', weeklyLabels, [
                             {
                                 label: 'Temperature (°F)',
@@ -220,14 +233,14 @@
                             }
                         ]);
 
+
                     } catch (error) {
                         console.error("Error fetching WeatherAPI data:", error);
                         alert("Failed to fetch data from WeatherAPI. Please try again later.");
                     }
                 }
 
-                async function fetchOpenWeather(city = "Hanoi") {
-                    const openWeatherApiKey = '8a20dec3a0d89b95d3626c4b77da1834';
+                async function fetchOpenWeather(city = "") {
                     const openWeatherApiUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${openWeatherApiKey}&units=metric`;
 
                     try {
@@ -241,53 +254,113 @@
                             return (celsius * 9/5) + 32;
                         }
 
-                        // Get current weather data (first forecast entry)
-                        const currentWeather = data.list[0];
-                        document.getElementById('open_temp_c').textContent = convertCtoF(currentWeather.main.temp).toFixed(1);
-                        document.getElementById('open_feelslike_c').textContent = convertCtoF(currentWeather.main.feels_like).toFixed(1);
-                        document.getElementById('open_condition').textContent = currentWeather.weather[0].description;
-                        document.getElementById('open_humidity').textContent = currentWeather.main.humidity;
-                        document.getElementById('open_wind_kph').textContent = (currentWeather.wind.speed * 3.6).toFixed(1); // Convert m/s to km/h
-                        document.getElementById('open_min_temp').textContent = convertCtoF(currentWeather.main.temp_min).toFixed(1);
-                        document.getElementById('open_max_temp').textContent = convertCtoF(currentWeather.main.temp_max).toFixed(1);
-                        document.getElementById('open_visibility').textContent = (currentWeather.visibility / 1000).toFixed(1); // Convert visibility to km
+                        // Nhóm dữ liệu theo ngày
+                        const groupedData = {};
+                        data.list.forEach(entry => {
+                            const date = entry.dt_txt.split(' ')[0]; // Lấy phần ngày từ 'dt_txt'
+                            if (!groupedData[date]) {
+                                groupedData[date] = [];
+                            }
+                            groupedData[date].push(entry);
+                        });
+
+                        // Duyệt qua các ngày và tính toán dữ liệu trung bình/tổng hợp
+                        const dailyData = Object.keys(groupedData).map(date => {
+                            const dayEntries = groupedData[date];
+                            const totalTemp = dayEntries.reduce((sum, entry) => sum + entry.main.temp, 0);
+                            const avgTemp = totalTemp / dayEntries.length;
+
+                            const totalHumidity = dayEntries.reduce((sum, entry) => sum + entry.main.humidity, 0);
+                            const avgHumidity = totalHumidity / dayEntries.length;
+
+                            const maxTemp = Math.max(...dayEntries.map(entry => entry.main.temp_max));
+                            const minTemp = Math.min(...dayEntries.map(entry => entry.main.temp_min));
+
+                            const avgWindSpeed = dayEntries.reduce((sum, entry) => sum + entry.wind.speed, 0) / dayEntries.length;
+                            const avgVisibility = dayEntries.reduce((sum, entry) => sum + entry.visibility, 0) / dayEntries.length;
+
+                            return {
+                                date,
+                                avgTemp: convertCtoF(avgTemp).toFixed(1),
+                                avgHumidity: avgHumidity.toFixed(1),
+                                maxTemp: convertCtoF(maxTemp).toFixed(1),
+                                minTemp: convertCtoF(minTemp).toFixed(1),
+                                condition: dayEntries[0].weather[0].description,
+                                icon: dayEntries[0].weather[0].icon,
+                                avgWindSpeed: (avgWindSpeed * 3.6).toFixed(1),
+                                avgVisibility: (avgVisibility / 1000).toFixed(1)
+                            };
+                        });
+
+                        // Hiển thị dữ liệu của ngày đầu tiên lên giao diện
+                        const todayData = dailyData[0];
+                        document.getElementById('open_temp_c').textContent = todayData.avgTemp;
+                        document.getElementById('open_feelslike_c').textContent = todayData.avgTemp;
+                        document.getElementById('open_condition').textContent = todayData.condition;
+                        document.getElementById('open_humidity').textContent = todayData.avgHumidity;
+                        document.getElementById('open_wind_kph').textContent = todayData.avgWindSpeed;
+                        document.getElementById('open_min_temp').textContent = todayData.minTemp;
+                        document.getElementById('open_max_temp').textContent = todayData.maxTemp;
+                        document.getElementById('open_visibility').textContent = todayData.avgVisibility;
 
                         // Calculate and format sunrise/sunset using timezone
                         const timezoneOffsetSeconds = data.city.timezone; // Offset in seconds
-                        const timezoneOffsetString = `UTC${timezoneOffsetSeconds >= 0 ? '+' : ''}${timezoneOffsetSeconds / 3600}`;
 
-                        const sunrise = luxon.DateTime.fromSeconds(data.city.sunrise, { zone: timezoneOffsetString });
-                        const sunset = luxon.DateTime.fromSeconds(data.city.sunset, { zone: timezoneOffsetString });
+                        // Chuyển đổi thời gian từ giây (Unix timestamp) thành DateTime với múi giờ được điều chỉnh
+                        const sunrise = luxon.DateTime.fromSeconds(data.city.sunrise + timezoneOffsetSeconds, { zone: 'utc' });
+                        const sunset = luxon.DateTime.fromSeconds(data.city.sunset + timezoneOffsetSeconds, { zone: 'utc' });
 
+                        // Hiển thị thời gian với định dạng giờ:phút (AM/PM)
                         document.getElementById('open_sunrise').textContent = sunrise.toFormat('hh:mm a');
                         document.getElementById('open_sunset').textContent = sunset.toFormat('hh:mm a');
 
                         // Set the OpenWeatherMap icon
-                        const iconCode = currentWeather.weather[0].icon;
-                        document.getElementById('openweather-icon').src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+                        document.getElementById('openweather-icon').src = `https://openweathermap.org/img/wn/${todayData.icon}@2x.png`;
 
-                        // Prepare hourly rain chance and rainfall data for charts
-                        const hourlyLabels = data.list.map(entry => {
+                        // Lấy ngày hiện tại và ngày tiếp theo để lọc dữ liệu
+                        const todayDate = new Date();
+                        const todayDateString = todayDate.toISOString().split('T')[0];
+                        const nextDate = new Date(todayDate);
+                        nextDate.setDate(todayDate.getDate() + 1);
+                        const nextDateString = nextDate.toISOString().split('T')[0];
+
+                        // Lọc dữ liệu cho ngày hiện tại
+                        const todayEntries = data.list.filter(entry => {
+                            const entryDate = entry.dt_txt.split(' ')[0];
+                            return entryDate === todayDateString;
+                        });
+
+                        // Nếu không đủ dữ liệu trong ngày hiện tại, lấy thêm từ ngày tiếp theo
+                        if (todayEntries.length < 8) {
+                            const additionalEntries = data.list.filter(entry => {
+                                const entryDate = entry.dt_txt.split(' ')[0];
+                                return entryDate === nextDateString;
+                            });
+                            todayEntries.push(...additionalEntries.slice(0, 8 - todayEntries.length));
+                        }
+
+                        // Dữ liệu biểu đồ cột cho ngày hiện tại
+                        const hourlyLabels = todayEntries.map(entry => {
                             const date = new Date(entry.dt * 1000);
                             return date.getHours() + ':00';
                         });
+                        const rainChanceData = todayEntries.map(entry => entry.pop * 100); // Cơ hội mưa (%)
+                        const rainfallData = todayEntries.map(entry => (entry.rain ? entry.rain['3h'] || 0 : 0)); // Lượng mưa (mm)
 
-                        const rainChanceData = data.list.map(entry => entry.pop * 100); // Probability of precipitation in %
-                        const rainfallData = data.list.map(entry => (entry.rain ? entry.rain['3h'] || 0 : 0)); // Rain volume in mm
-
-                        // Create bar charts for rain chance and rainfall
+                        // Hiển thị biểu đồ cột cho cơ hội mưa và lượng mưa
                         createBarChart('rain-chance-chart-openweathermap', hourlyLabels, 'Chance of rain (%)', rainChanceData, 'rgba(75, 192, 192, 0.6)');
                         createBarChart('rainfall-chart-openweathermap', hourlyLabels, 'Rainfall (mm)', rainfallData, 'rgba(153, 102, 255, 0.6)');
 
-                        // Prepare data for the line chart (7-day forecast)
-                        const dailyTempData = data.list.filter((_, index) => index % 8 === 0).slice(0, 7).map(entry => convertCtoF(entry.main.temp).toFixed(1));
-                        const dailyRainChance = data.list.filter((_, index) => index % 8 === 0).slice(0, 7).map(entry => entry.pop * 100);
-                        const dailyLabels = data.list.filter((_, index) => index % 8 === 0).slice(0, 7).map(entry => {
-                            const date = new Date(entry.dt * 1000);
-                            return date.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' });
+                        // Hiển thị biểu đồ đường
+                        const dailyLabels = dailyData.map(day => new Date(day.date).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' }));
+                        const dailyTempData = dailyData.map(day => day.avgTemp);
+                        const dailyRainChance = dailyData.map(day => {
+                            // Tính trung bình cơ hội mưa trong ngày
+                            const dayEntries = groupedData[day.date];
+                            const totalRainChance = dayEntries.reduce((sum, entry) => sum + entry.pop, 0);
+                            return (totalRainChance / dayEntries.length * 100).toFixed(1); // Đổi sang %
                         });
 
-                        // Create a line chart for temperature and rain chance
                         createLineChart('weekly-rain-chance-chart-openweathermap', dailyLabels, [
                             {
                                 label: 'Temperature (°F)',
